@@ -30,7 +30,7 @@
     "image-downloader": "^4.3.0",
     "jsdom": "^21.1.1",
     "jszip": "^3.10.1",
-    "mongoose": "^7.0.4",
+    "mongoose": "~6.4.6",
     "pdf-lib": "^1.17.1",
     "pdfkit": "^0.13.0",
     "pngquant-bin": "^6.0.1",
