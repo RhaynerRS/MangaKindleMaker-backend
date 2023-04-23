@@ -59,7 +59,7 @@ app.engine('html', require('ejs').renderFile);
 app.use(bodyParser.json());
 app.use(cors({ origin: true, credentials: true }));
 
-let port = 3005;
+let port = 3000;
 
 app.get("/api/mangas/search/:name", async (req, res) => {
   var return_data = { "mangas": [] };
