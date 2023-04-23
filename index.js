@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 const GenEpub = require("./methods/GenEpub.js");
 const GenMobi = require("./methods/GenMobi");
 const mangaLivreHandler = require("./methods/MangaLivreApiHandler");
-
+const got = require("axios");
 const path = require("path");
 const userSchema = require("./schemes/user");
 const swaggerJsdoc = require('swagger-jsdoc');
@@ -61,8 +61,39 @@ app.use(cors({ origin: true, credentials: true }));
 
 let port = 3005;
 
-app.get("/api/mangas/search/:Name",async (req, res)=>{
-  res.send(await mangaLivreHandler.search(req.params.Name));
+app.get("/api/mangas/search/:name", async (req, res) => {
+  var return_data = { "mangas": [] };
+  
+  await got.post(
+    "https://mangalivre.net/lib/search/series.json", { search: req.params.name }, {
+    headers: {
+      "x-requested-with": "XMLHttpRequest",
+      "content-type": "application/x-www-form-urlencoded",
+    },
+  }).then((res) => {
+    // nenhum resultado
+
+    console.log(res.data.series)
+    if (!res.data.series) {
+      return return_data;
+    }
+
+    for (let serie of res.data.series) {
+      return_data.mangas.push({
+        "id_serie": serie.id_serie,
+        "name": serie.name,
+        "label": serie.label,
+        "score": serie.score,
+        "value": serie.value,
+        "author": serie.author,
+        "artist": serie.artist,
+        "image": serie.cover,
+        "categories": serie.categories.map((categorie) => { return { "name": categorie.name, "id_category": categorie.id_category }; }),
+      });
+    }
+  });
+
+  res.send(return_data);
 })
 
 app.post("/api/mangas/generate-volume", apiKeyAuth, async (req, res) => {
@@ -78,24 +109,24 @@ app.post("/api/mangas/generate-volume", apiKeyAuth, async (req, res) => {
     req.body.cover
   );
 
-  await GenMobi(path.join(PathToEpub, `${req.body.folder}.epub`), req.body.folder).then(()=>{res.send("teste");});
+  await GenMobi(path.join(PathToEpub, `${req.body.folder}.epub`), req.body.folder).then(() => { res.send("teste"); });
 });
 
 app.post("/api/users/signup", async (req, res) => {
-  const user = new User({ 
-    name: req.body.Name, 
-    username: req.body.Username, 
-    email: req.body.Email, 
-    password: aes.encrypt(req.body.Password), 
-    apikey: uuidv4(), 
-    passwordChangeCode: null 
+  const user = new User({
+    name: req.body.Name,
+    username: req.body.Username,
+    email: req.body.Email,
+    password: aes.encrypt(req.body.Password),
+    apikey: uuidv4(),
+    passwordChangeCode: null
   });
 
   user.save()
-  .then(
-      () => console.log(), 
+    .then(
+      () => console.log(),
       (err) => console.log(err)
-  );
+    );
 
   res.send({
     Name: req.body.Name,
@@ -104,7 +135,7 @@ app.post("/api/users/signup", async (req, res) => {
   })
 })
 
-app.get("/download", async (req,res)=>{
+app.get("/download", async (req, res) => {
   res.set({
     'Content-Disposition': 'attachment; filename=nome-do-arquivo.epub'
   });
@@ -114,13 +145,13 @@ app.get("/download", async (req,res)=>{
 
 app.post("/api/users/signin", async (req, res) => {
   const loggedUser = await User.findOne({
-    username: req.body.Username, 
+    username: req.body.Username,
     password: aes.encrypt(req.body.Password)
   }).exec();
 
   console.log(loggedUser)
 
-  if (loggedUser==null){
+  if (loggedUser == null) {
     return res.status(401).send();
   }
 
