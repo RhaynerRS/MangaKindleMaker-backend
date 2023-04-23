@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const Epub = require("epub-gen");
 const JSZip = require("jszip");
+const {Blob} = require("buffer")
 const xml2js = require("xml2js");
 // Obter o caminho completo para a pasta de imagens e o arquivo de saída
 async function GenEpub(totalImages,titulo, autor, diretorio, urlCover) {
@@ -22,38 +23,12 @@ async function GenEpub(totalImages,titulo, autor, diretorio, urlCover) {
     );
 
   // Converter cada arquivo em um objeto de capítulo
-  const chapters = totalImages.map((file) => {
-    const imageFilePath = path.join(imagesFolderPath, file);
+  const chapters = totalImages.map((imageUrl) => {
     return {
       data: `<div style="text-align:center;top:0.0%;">
-      <img width="1072" height="1448" src="${imageFilePath}"/>
+      <img width="1072" height="1448" src="${imageUrl}"/>
       </div>
-      <div id="PV">
-      <div id="PV-TL">
-      <a style="display:inline-block;width:100%;height:100%;" class="app-amzn-magnify" data-app-amzn-magnify='{"targetId":"PV-TL-P", "ordinal":2}'></a>
-      </div>
-      <div id="PV-TR">
-      <a style="display:inline-block;width:100%;height:100%;" class="app-amzn-magnify" data-app-amzn-magnify='{"targetId":"PV-TR-P", "ordinal":1}'></a>
-      </div>
-      <div id="PV-BL">
-      <a style="display:inline-block;width:100%;height:100%;" class="app-amzn-magnify" data-app-amzn-magnify='{"targetId":"PV-BL-P", "ordinal":4}'></a>
-      </div>
-      <div id="PV-BR">
-      <a style="display:inline-block;width:100%;height:100%;" class="app-amzn-magnify" data-app-amzn-magnify='{"targetId":"PV-BR-P", "ordinal":3}'></a>
-      </div>
-      </div>
-      <div class="PV-P" id="PV-TL-P" style="">
-      <img style="position:absolute;left:0;top:0;" src="${imageFilePath}" width="1608" height="2172"/>
-      </div>
-      <div class="PV-P" id="PV-TR-P" style="">
-      <img style="position:absolute;right:0;top:0;" src="${imageFilePath}" width="1608" height="2172"/>
-      </div>
-      <div class="PV-P" id="PV-BL-P" style="">
-      <img style="position:absolute;left:0;bottom:0;" src="${imageFilePath}" width="1608" height="2172"/>
-      </div>
-      <div class="PV-P" id="PV-BR-P" style="">
-      <img style="position:absolute;right:0;bottom:0;" src="${imageFilePath}" width="1608" height="2172"/>
-      </div>`,
+      `,
     };
   });
 

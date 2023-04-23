@@ -57,7 +57,7 @@ app.engine('html', require('ejs').renderFile);
 app.use(bodyParser.json());
 app.use(cors({ origin: true, credentials: true }));
 
-let port = 3000;
+let port = 3005;
 
 app.post("/api/mangas/generate-volume", apiKeyAuth, async (req, res) => {
   let totalImages = [];
@@ -72,9 +72,7 @@ app.post("/api/mangas/generate-volume", apiKeyAuth, async (req, res) => {
     req.body.cover
   );
 
-  await GenMobi(path.join(PathToEpub, `${req.body.folder}.epub`), req.body.folder);
-
-  res.send(`Seu mangá ${req.body.name} foi gerado com sucesso e foi salvo em ${PathToEpub}`);
+  await GenMobi(path.join(PathToEpub, `${req.body.folder}.epub`), req.body.folder).then(()=>{res.send("teste");});
 });
 
 app.post("/api/users/signup", async (req, res) => {
@@ -100,6 +98,14 @@ app.post("/api/users/signup", async (req, res) => {
   })
 })
 
+app.get("/download", async (req,res)=>{
+  res.set({
+    'Content-Disposition': 'attachment; filename=nome-do-arquivo.epub'
+  });
+
+  res.download(`C:/Users/jbdes/Pictures/teste/teste.epub`);
+})
+
 app.post("/api/users/signin", async (req, res) => {
   const loggedUser = await User.findOne({
     username: req.body.Username, 
@@ -119,9 +125,5 @@ app.get('/', (req, res) => {
   res.redirect("/swagger")
 });
 
-app.get('*', (req, res) => {
-  res.header("404");
-  res.render("errors/404.html");
-});
 
 app.listen(port, () => { });

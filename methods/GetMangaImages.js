@@ -52,13 +52,7 @@ async function GetMangaImages(manga, nomePasta, inicio = 1, fim = 1) {
     for(const chapter of chaptersId){
         await api.getPages(chapter).then(async (pages) => {
             for(let image of pages.images){
-                await axios({
-                    url: image.legacy,
-                    responseType: "stream",
-                }).then(async (response) => {
-                    await response.data.pipe(fs.createWriteStream(`${userImageFolderPath}/${images.length + 1}.png`));
-                    images.push(`${images.length + 1}.png`)
-                });
+                images.push(image.legacy)
             }
         });
     }
