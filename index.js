@@ -96,6 +96,14 @@ app.get("/api/mangas/search/:name", async (req, res) => {
   res.send(return_data);
 })
 
+app.get("/api/mangas/search2/:name", async (req, res) => {
+  const url = `https://api.consumet.org/manga/mangadex/${req.params.name}`;
+
+  const { data } = await got.get(url);
+
+  res.send(data);
+})
+
 app.post("/api/mangas/generate-volume", apiKeyAuth, async (req, res) => {
   let totalImages = [];
   let PathToEpub = path.join(require("os").homedir(), "Pictures", req.body.folder);
