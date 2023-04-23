@@ -2,6 +2,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const GenEpub = require("./methods/GenEpub.js");
 const GenMobi = require("./methods/GenMobi");
+const mangaLivreHandler = require("./methods/MangaLivreApiHandler");
+
 const path = require("path");
 const userSchema = require("./schemes/user");
 const swaggerJsdoc = require('swagger-jsdoc');
@@ -58,6 +60,10 @@ app.use(bodyParser.json());
 app.use(cors({ origin: true, credentials: true }));
 
 let port = 3005;
+
+app.get("/api/mangas/search/:Name",async (req, res)=>{
+  res.send(await mangaLivreHandler.search(req.params.Name));
+})
 
 app.post("/api/mangas/generate-volume", apiKeyAuth, async (req, res) => {
   let totalImages = [];
