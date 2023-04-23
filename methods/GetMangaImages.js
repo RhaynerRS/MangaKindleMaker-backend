@@ -30,6 +30,7 @@ async function GetMangaImages(manga, nomePasta, inicio = 1, fim = 1) {
 
     //search manga by name
     await api.search(manga).then(async (res) => {
+        console.log(res)
         mangaId = res.mangas[0].id_serie;
     });
 
