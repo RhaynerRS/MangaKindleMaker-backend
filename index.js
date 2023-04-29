@@ -2,7 +2,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const GenEpub = require("./methods/GenEpub.js");
 const GenMobi = require("./methods/GenMobi");
-const mangaLivreHandler = require("./methods/MangaLivreApiHandler");
 const got = require("axios");
 const path = require("path");
 const userSchema = require("./schemes/user");
@@ -13,7 +12,7 @@ const apiKeyAuth = require("./middlewares/apikeyAuth")
 const { v4: uuidv4 } = require('uuid');
 const mongoose = require("mongoose");
 const AesEncryption = require('aes-encryption')
-const GetMangaImages = require("./methods/GetMangaImages.js")
+const GetMangaVolumePages= require("./methods/GetMangaImages.js")
 var cors = require("cors");
 
 const User = mongoose.model('usuarios', userSchema);
@@ -61,54 +60,11 @@ app.use(cors({ origin: true, credentials: true }));
 
 let port = 3000;
 
-app.get("/api/mangas/search/:name", async (req, res) => {
-  var return_data = { "mangas": [] };
-  
-  await got.post(
-    "https://mangalivre.net/lib/search/series.json", { search: req.params.name }, {
-    headers: {
-      "x-requested-with": "XMLHttpRequest",
-      "content-type": "application/x-www-form-urlencoded",
-    },
-  }).then((res) => {
-    // nenhum resultado
-
-    console.log(res.data.series)
-    if (!res.data.series) {
-      return return_data;
-    }
-
-    for (let serie of res.data.series) {
-      return_data.mangas.push({
-        "id_serie": serie.id_serie,
-        "name": serie.name,
-        "label": serie.label,
-        "score": serie.score,
-        "value": serie.value,
-        "author": serie.author,
-        "artist": serie.artist,
-        "image": serie.cover,
-        "categories": serie.categories.map((categorie) => { return { "name": categorie.name, "id_category": categorie.id_category }; }),
-      });
-    }
-  });
-
-  res.send(return_data);
-})
-
-app.get("/api/mangas/search2/:name", async (req, res) => {
-  const url = `https://api.consumet.org/manga/mangadex/${req.params.name}`;
-
-  const { data } = await got.get(url);
-
-  res.send(data);
-})
-
 app.post("/api/mangas/generate-volume", apiKeyAuth, async (req, res) => {
   let totalImages = [];
-  let PathToEpub = path.join(require("os").homedir(), "Pictures", req.body.folder);
+  let PathToEpub = path.join(__dirname, req.body.folder);
 
-  totalImages = [...await GetMangaImages(req.body.name, req.body.folder, req.body.start, req.body.end)];
+  totalImages = [...await GetMangaVolumePages(req.body.id, PathToEpub, req.body.volume)];
 
   await GenEpub(totalImages,
     req.body.folder,
@@ -117,7 +73,9 @@ app.post("/api/mangas/generate-volume", apiKeyAuth, async (req, res) => {
     req.body.cover
   );
 
-  await GenMobi(path.join(PathToEpub, `${req.body.folder}.epub`), req.body.folder).then(() => { res.send("teste"); });
+  await GenMobi(path.join(PathToEpub, `${req.body.folder}.epub`), req.body.folder)
+
+  res.download(path.join(PathToEpub, `${req.body.folder}.epub`))
 });
 
 app.post("/api/users/signup", async (req, res) => {

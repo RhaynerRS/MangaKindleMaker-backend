@@ -2,10 +2,14 @@ const fs = require("fs");
 const path = require("path");
 const Epub = require("epub-gen");
 const JSZip = require("jszip");
-const {Blob} = require("buffer")
-const xml2js = require("xml2js");
+
 // Obter o caminho completo para a pasta de imagens e o arquivo de saída
-async function GenEpub(totalImages,titulo, autor, diretorio, urlCover) {
+async function GenEpub(totalImages, titulo, autor, diretorio, urlCover) {
+  fs.mkdir(diretorio, { recursive: true }, (err) => {
+    if (err) {
+      throw err;
+    }
+  });
 
   const outputFile = `${titulo}.epub`;
   const imagesFolderPath = path.resolve(diretorio);
@@ -23,10 +27,11 @@ async function GenEpub(totalImages,titulo, autor, diretorio, urlCover) {
     );
 
   // Converter cada arquivo em um objeto de capítulo
-  const chapters = totalImages.map((imageUrl) => {
+  const chapters = totalImages.map((file) => {
+    const imageFilePath = path.join(imagesFolderPath, file);
     return {
       data: `<div style="text-align:center;top:0.0%;">
-      <img width="1072" height="1448" src="${imageUrl}"/>
+      <img width="1072" height="1448" src="${imageFilePath}"/>
       </div>
       `,
     };
@@ -34,7 +39,7 @@ async function GenEpub(totalImages,titulo, autor, diretorio, urlCover) {
 
   // Gerar o arquivo EPUB
   const options = {
-    title: titulo.replace("-"," "),
+    title: titulo.replace("-", " "),
     author: autor,
     publisher: "panini",
     language: "pt-br",
@@ -124,18 +129,18 @@ async function GenEpub(totalImages,titulo, autor, diretorio, urlCover) {
   };
 
   await new Epub(options).promise.then(() => {
-      
-    })
+
+  })
     .catch((err) => console.error("Erro ao gerar o arquivo EPUB:", err));
 
-      const epubFile = fs.readFileSync(outputPath);
-      const zip = await JSZip.loadAsync(epubFile);
+  const epubFile = fs.readFileSync(outputPath);
+  const zip = await JSZip.loadAsync(epubFile);
 
-      // Extrai o arquivo content.opf
-      const contentOpfFile = await zip.file('OEBPS/content.opf').async('string');
+  // Extrai o arquivo content.opf
+  const contentOpfFile = await zip.file('OEBPS/content.opf').async('string');
 
-      // Adiciona metadados ao arquivo content.opf
-      const metadata = `
+  // Adiciona metadados ao arquivo content.opf
+  const metadata = `
       <meta name="fixed-layout" content="true"/>
       <meta name="original-resolution" content="1072x1448"/>
       <meta name="book-type" content="comic"/>
@@ -148,14 +153,14 @@ async function GenEpub(totalImages,titulo, autor, diretorio, urlCover) {
       <meta name="region-mag" content="true"/>
 
       `;
-      const updatedContentOpfFile = contentOpfFile.replace('</metadata>', metadata + '</metadata>');
+  const updatedContentOpfFile = contentOpfFile.replace('</metadata>', metadata + '</metadata>');
 
-      // Cria um novo arquivo EPUB com o arquivo content.opf atualizado
-      zip.file('OEBPS/content.opf', updatedContentOpfFile);
-      const updatedEpubFile = await zip.generateAsync({ type: 'nodebuffer' });
+  // Cria um novo arquivo EPUB com o arquivo content.opf atualizado
+  zip.file('OEBPS/content.opf', updatedContentOpfFile);
+  const updatedEpubFile = await zip.generateAsync({ type: 'nodebuffer' });
 
-      // Salva o novo arquivo EPUB
-      fs.writeFileSync(path.join(outputPath), updatedEpubFile);
+  // Salva o novo arquivo EPUB
+  fs.writeFileSync(path.join(outputPath), updatedEpubFile);
 }
 
 

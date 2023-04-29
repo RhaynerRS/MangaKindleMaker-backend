@@ -1,64 +1,41 @@
+const { MANGA } = require("@consumet/extensions");
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-const mangaLivreHandler = require("./MangaLivreApiHandler");
 
-async function GetMangaImages(manga, nomePasta, inicio = 1, fim = 1) {
-    let chaptersId = [];
-    let images = [];
-    let mangaId = "";
-    let itemsProcessed = 0;
-    let userImageFolderPath = path.join(
-        require("os").homedir(),
-        "Pictures",
-        nomePasta
-    );
-    console.log(manga);
-    var return_data = {
-        id_serie: undefined,
-        url_name: undefined,
-        name: undefined,
-        chapters: [],
-    };
+async function GetMangaVolumePages(mangaId, userImageFolderPath, volume = 1) {
+    const images = [];
+    let chapters = [];
 
-    //create folder to downloaded chapters
     fs.mkdir(userImageFolderPath, { recursive: true }, (err) => {
         if (err) {
             throw err;
         }
     });
+    const mangadex = new MANGA.MangaDex({ languages: "pt-br" });
 
-    //search manga by name
-    await mangaLivreHandler.search(manga).then(async (res) => {
-        console.log(res)
-        mangaId = res.mangas[0].id_serie;
-    });
+    const mangaData = await mangadex.fetchMangaInfo(mangaId);
 
-    //get chapters from volume
-    for (let i = 1; ; i++) {
-        var result = await mangaLivreHandler.getChapters(mangaId, i);
+    chapters = mangaData.chapters.filter(
+        (chapter) => parseInt(chapter.volumeNumber) == volume
+    );
 
-        if (result.chapters.length > 0) {
-            for(let chapter of result.chapters.reverse()) {
-                let chapter_number = parseInt(chapter.number);
-                if (chapter_number >= inicio && chapter_number <= fim)
-                    chaptersId.push(chapter.id_release);
-            };
-            continue;
+    for (let i = 0; i < chapters.length; i++) {
+        const chapter = chapters[i];
+        const pages = await mangadex.fetchChapterPages(chapter.id);
+        for (let j = 0; j < pages.length; j++) {
+            const page = pages[j];
+            await axios({
+                    url: page.img,
+                    responseType: "stream",
+                }).then(async (response) => {
+                    await response.data.pipe(fs.createWriteStream(`${userImageFolderPath}/${images.length + 1}.png`));
+                    images.push(`${images.length + 1}.png`)
+                });
         }
-        break;
-    }
-
-    //get pages from chapters
-    for(const chapter of chaptersId){
-        await mangaLivreHandler.getPages(chapter).then(async (pages) => {
-            for(let image of pages.images){
-                images.push(image.legacy)
-            }
-        });
     }
 
     return images;
 }
 
-module.exports = GetMangaImages;
+module.exports = GetMangaVolumePages;
