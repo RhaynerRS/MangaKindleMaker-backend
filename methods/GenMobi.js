@@ -1,20 +1,18 @@
-var {spawn} = require('child_process')
-const path = require("path");
+const { execFile } = require('child_process');
+const path = require('path');
 
 async function GenMobi(PathToEpub, NomeArquivo) {
-    const kindleGen = spawn('kindlegen.exe', [PathToEpub, '-o', `${NomeArquivo}.mobi`], { cwd: __dirname });
-
-    kindleGen.on('error', (err) => {
-      console.error(`Erro ao executar o comando kindlegen.exe: ${err}`);
-    });
+  const kindlegenPath = path.join(__dirname, 'kindlegen.exe');
+  const args = [PathToEpub, '-o', `${NomeArquivo}.mobi`];
   
-    kindleGen.on('close', (code) => {
-      if (code === 0) {
-        console.log('O processo filho foi concluído com sucesso!');
-      } else {
-        console.error(`O processo filho foi encerrado com o código de saída ${code}`);
-      }
-    });
+  execFile(kindlegenPath, args, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`exec error: ${error}`);
+      return;
+    }
+    console.log(`stdout: ${stdout}`);
+    console.error(`stderr: ${stderr}`);
+  });
 }
 
 module.exports = GenMobi;

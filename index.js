@@ -73,7 +73,7 @@ app.post("/api/mangas/generate-volume", apiKeyAuth, async (req, res) => {
     req.body.cover
   );
 
-  // await GenMobi(path.join(PathToEpub, `${uuid}.epub`), req.body.folder)
+  await GenMobi(path.join(PathToEpub, `${uuid}.epub`), uuid)
 
   setTimeout(async ()=>{
     fs.rmdir(PathToEpub, { recursive: true }, err => {
