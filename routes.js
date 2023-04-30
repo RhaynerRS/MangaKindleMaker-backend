@@ -72,15 +72,13 @@
  *         schema:
  *           type: object
  *           properties:
- *             name:
+ *             id:
  *               type: string
- *             start:
+ *             volume:
  *               type: number
- *             end:
- *               type: number
- *             folder:
- *               type: string
  *             author:
+ *               type: string
+ *             cover:
  *               type: string
  *     responses:
  *       200:

@@ -2,7 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const GenEpub = require("./methods/GenEpub.js");
 const GenMobi = require("./methods/GenMobi");
-const got = require("axios");
+const fs = require("fs");
 const path = require("path");
 const userSchema = require("./schemes/user");
 const swaggerJsdoc = require('swagger-jsdoc');
@@ -62,20 +62,28 @@ let port = 3000;
 
 app.post("/api/mangas/generate-volume", apiKeyAuth, async (req, res) => {
   let totalImages = [];
-  let PathToEpub = path.join(__dirname, req.body.folder);
-
+  let uuid = uuidv4();
+  let PathToEpub = path.join(__dirname, uuid);
   totalImages = [...await GetMangaVolumePages(req.body.id, PathToEpub, req.body.volume)];
 
   await GenEpub(totalImages,
-    req.body.folder,
+    uuid,
     req.body.author,
     PathToEpub,
     req.body.cover
   );
 
-  await GenMobi(path.join(PathToEpub, `${req.body.folder}.epub`), req.body.folder)
+  // await GenMobi(path.join(PathToEpub, `${uuid}.epub`), req.body.folder)
 
-  res.download(path.join(PathToEpub, `${req.body.folder}.epub`))
+  setTimeout(async ()=>{
+    fs.rmdir(PathToEpub, { recursive: true }, err => {
+      if (err) {
+        throw err
+      }
+    })
+  },300000)
+
+  res.send(uuid);
 });
 
 app.post("/api/users/signup", async (req, res) => {
@@ -83,7 +91,7 @@ app.post("/api/users/signup", async (req, res) => {
     name: req.body.Name,
     username: req.body.Username,
     email: req.body.Email,
-    password: aes.encrypt(req.body.Password),
+    password: req.body.Password,
     apikey: uuidv4(),
     passwordChangeCode: null
   });
@@ -101,18 +109,18 @@ app.post("/api/users/signup", async (req, res) => {
   })
 })
 
-app.get("/download", async (req, res) => {
+app.get("/api/mangas/download/:id", async (req, res) => {
   res.set({
-    'Content-Disposition': 'attachment; filename=nome-do-arquivo.epub'
+    'Content-Disposition': `attachment; filename=${req.params.id}.epub`
   });
 
-  res.download(`C:/Users/jbdes/Pictures/teste/teste.epub`);
+  res.download(path.join(__dirname, `${req.params.id}/${req.params.id}.epub`));
 })
 
 app.post("/api/users/signin", async (req, res) => {
   const loggedUser = await User.findOne({
     username: req.body.Username,
-    password: aes.encrypt(req.body.Password)
+    password: req.body.Password
   }).exec();
 
   console.log(loggedUser)
