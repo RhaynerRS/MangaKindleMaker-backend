@@ -1,7 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const GenEpub = require("./methods/GenEpub.js");
-const GenMobi = require("./methods/GenMobi");
+const genMobi = require("./methods/GenMobi");
+const ComprimeImagens = require("./methods/ComprimeImagens.js");
 const fs = require("fs");
 const path = require("path");
 const userSchema = require("./schemes/user");
@@ -66,14 +67,17 @@ app.post("/api/mangas/generate-volume", apiKeyAuth, async (req, res) => {
   let PathToEpub = path.join(__dirname, uuid);
   totalImages = [...await GetMangaVolumePages(req.body.id, PathToEpub, req.body.volume)];
 
+  await ComprimeImagens(PathToEpub);
+
   await GenEpub(totalImages,
+    `${req.body.name} - Vol.${req.body.volume}`,
     uuid,
     req.body.author,
     PathToEpub,
     req.body.cover
   );
 
-  await GenMobi(path.join(PathToEpub, `${uuid}.epub`), uuid)
+  await genMobi(path.join(PathToEpub, `${uuid}.epub`), uuid);
 
   setTimeout(async ()=>{
     fs.rmdir(PathToEpub, { recursive: true }, err => {
@@ -114,7 +118,7 @@ app.get("/api/mangas/download/:id", async (req, res) => {
     'Content-Disposition': `attachment; filename=${req.params.id}.epub`
   });
 
-  res.download(path.join(__dirname, `${req.params.id}/${req.params.id}.epub`));
+  res.download(path.join(__dirname, `${req.params.id}/${req.params.id}.mobi`));
 })
 
 app.post("/api/users/signin", async (req, res) => {
