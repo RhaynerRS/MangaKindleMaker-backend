@@ -67,8 +67,6 @@ app.post("/api/mangas/generate-volume", apiKeyAuth, async (req, res) => {
   let PathToEpub = path.join(__dirname, uuid);
   totalImages = [...await GetMangaVolumePages(req.body.id, PathToEpub, req.body.volume)];
 
-  await ComprimeImagens(PathToEpub);
-
   await GenEpub(totalImages,
     `${req.body.name} - Vol.${req.body.volume}`,
     uuid,
